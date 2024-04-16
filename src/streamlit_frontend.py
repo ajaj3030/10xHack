@@ -51,7 +51,20 @@ def create_section_dropdown(act, section, section_title):
         def generate_notes_callback():
             # Reset the thumbs up/down buttons
             st.session_state.section_dropdowns[section_key]["explanatory_notes_approved"] = None
-            st.session_state.section_dropdowns[section_key]["explanatory_notes"] = generate_explanatory_notes(legislation)
+        
+            # Get the legislation text
+            legislation = df[(df["act"] == act) & (df["section"] == section)]["text"].iloc[0]
+        
+            # Check if there's a redraft prompt
+            redraft_prompt = st.session_state.section_dropdowns[section_key]["redraft_prompt"]
+            if redraft_prompt:
+                # Generate explanatory notes with redraft
+                st.session_state.section_dropdowns[section_key]["explanatory_notes"] = generate_explanatory_notes_with_redraft(
+                    legislation, st.session_state.section_dropdowns[section_key]["explanatory_notes"], redraft_prompt
+                )
+            else:
+                # Generate explanatory notes without redraft
+                st.session_state.section_dropdowns[section_key]["explanatory_notes"] = generate_explanatory_notes(legislation)
 
         col1, col2, col3, col4 = st.columns([0.8, 0.05, 0.05, 0.1])
 
