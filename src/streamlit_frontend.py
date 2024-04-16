@@ -1,7 +1,11 @@
 import streamlit as st
+import pandas as pd
 
 # Set page config
 st.set_page_config(page_title="Legislation Explainer", layout="wide")
+
+# Load data from CSV file
+df = pd.read_csv("data/test_data.csv")
 
 # Initialize state variables
 if "explanatory_notes" not in st.session_state:
@@ -26,6 +30,24 @@ def generate_explanatory_notes_with_redraft(legislation, original_notes, redraft
 # Streamlit UI
 st.title("Legislation Explainer")
 
+# Sidebar
+with st.sidebar:
+    st.title("Select Act and Section")
+    act_options = ["Please select ACT"] + list(df["act"].unique())
+    selected_act = st.selectbox("Select Act", act_options)
+
+    if selected_act == "Please select ACT":
+        section_options = [""]
+    else:
+        section_options = ["Please select SECTION"] + list(df[df["act"] == selected_act]["section"].unique())
+    selected_section = st.selectbox("Select Section", section_options)
+
+    # Populate the "Legislation" text area with the corresponding text
+    if selected_act != "Please select ACT" and selected_section != "Please select SECTION":
+        legislation = df[(df["act"] == selected_act) & (df["section"] == selected_section)]["text"].iloc[0]
+    else:
+        legislation = ""
+
 col1, col2, col3, col4 = st.columns([0.8, 0.05, 0.05, 0.1])
 
 with col3:
@@ -39,7 +61,8 @@ with col4:
 col5, col6 = st.columns(2)
 
 with col5:
-    legislation = st.text_area("Legislation", height=200)
+    # The "Legislation" text area is now populated with the selected act and section
+    st.text_area("Legislation", value=legislation, height=200)
     if st.button("Generate Explanatory Notes"):
         # Reset the thumbs up/down buttons
         st.session_state.explanatory_notes_approved = None
