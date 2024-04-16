@@ -14,6 +14,12 @@ if "section_dropdowns" not in st.session_state:
 if "selected_language" not in st.session_state:
     st.session_state.selected_language = "English"
 
+if "selected_option_left" not in st.session_state:
+    st.session_state.selected_option_left = "Select an option"
+
+if "selected_option_right" not in st.session_state:
+    st.session_state.selected_option_right = "Select an option"
+
 def create_section_dropdown(act, section, section_title):
     section_key = f"{act}_{section}_{section_title.replace(' ', '_')}"  # Generate a unique key
     
@@ -99,6 +105,12 @@ def create_section_dropdown(act, section, section_title):
 
 # Streamlit UI
 st.title("Legislation Explainer")
+
+col1, col2 = st.columns(2)
+with col1:
+    selected_option_left = st.selectbox("How would you like to share your draft Legislation?", ["Select an option", "Download PDF", "Download DOCX", "Email"], key="selected_option_left")
+with col2:
+    selected_option_right = st.selectbox("How would you like to share your Explanatory Notes?", ["Select an option", "Download PDF", "Download DOCX", "Email"], key="selected_option_right")
 
 with st.sidebar:
     st.title("Select Act and Section")
