@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "10xHack"
+version = "0.1.0"
+description = "\"A Gen AI tool to create commentary from legislation and vice versa\""
+authors = ["Group 11"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+streamlit = "1.26.0"
+st-pages = "^0.4.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
