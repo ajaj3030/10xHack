@@ -102,6 +102,11 @@ with st.sidebar:
     language_options = ["English", "Welsh"]
     selected_language = st.selectbox("Select Language", language_options, index=0)
     st.session_state.selected_language = selected_language
+    
+    # Add audience level selection dropdown
+    audience_level_options = ["No legal background", "Legal professional"]
+    selected_audience_level = st.selectbox("Audience", audience_level_options, index=0)
+    st.session_state.selected_audience_level = "1" if selected_audience_level == "No legal background" else "2"
 
 if selected_act != "Please select ACT" and selected_section != "Please select SECTION":
     if selected_section == "All":
