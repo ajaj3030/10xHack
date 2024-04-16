@@ -12,19 +12,21 @@ if "section_dropdowns" not in st.session_state:
     st.session_state.section_dropdowns = {}
 
 def create_section_dropdown(act, section, section_title):
+    section_key = f"{act}_{section}_{section_title.replace(' ', '_')}"  # Generate a unique key
+    
     with st.expander(section_title, expanded=False):
         # Initialize state variables for this section dropdown
-        if section_title not in st.session_state.section_dropdowns:
-            st.session_state.section_dropdowns[section_title] = {
+        if section_key not in st.session_state.section_dropdowns:
+            st.session_state.section_dropdowns[section_key] = {
                 "explanatory_notes": "",
                 "explanatory_notes_approved": None,
                 "redraft_prompt": ""
             }
 
         # Get the state variables for this section dropdown
-        explanatory_notes = st.session_state.section_dropdowns[section_title]["explanatory_notes"]
-        explanatory_notes_approved = st.session_state.section_dropdowns[section_title]["explanatory_notes_approved"]
-        redraft_prompt = st.session_state.section_dropdowns[section_title]["redraft_prompt"]
+        explanatory_notes = st.session_state.section_dropdowns[section_key]["explanatory_notes"]
+        explanatory_notes_approved = st.session_state.section_dropdowns[section_key]["explanatory_notes_approved"]
+        redraft_prompt = st.session_state.section_dropdowns[section_key]["redraft_prompt"]
 
         # Define the LLM function
         def generate_explanatory_notes(legislation):
@@ -38,24 +40,24 @@ def create_section_dropdown(act, section, section_title):
             return revised_notes
 
         def thumbs_up_callback():
-            st.session_state.section_dropdowns[section_title]["explanatory_notes_approved"] = True
+            st.session_state.section_dropdowns[section_key]["explanatory_notes_approved"] = True
 
         def thumbs_down_callback():
-            st.session_state.section_dropdowns[section_title]["explanatory_notes_approved"] = False
+            st.session_state.section_dropdowns[section_key]["explanatory_notes_approved"] = False
 
         def generate_notes_callback():
             # Reset the thumbs up/down buttons
-            st.session_state.section_dropdowns[section_title]["explanatory_notes_approved"] = None
-            st.session_state.section_dropdowns[section_title]["explanatory_notes"] = generate_explanatory_notes(legislation)
+            st.session_state.section_dropdowns[section_key]["explanatory_notes_approved"] = None
+            st.session_state.section_dropdowns[section_key]["explanatory_notes"] = generate_explanatory_notes(legislation)
 
         col1, col2, col3, col4 = st.columns([0.8, 0.05, 0.05, 0.1])
 
         with col3:
-            if st.button("👍", key=f"thumbs_up_{section_title}", on_click=thumbs_up_callback):
+            if st.button("👍", key=f"thumbs_up_{section_key}", on_click=thumbs_up_callback):
                 pass
 
         with col4:
-            if st.button("👎", key=f"thumbs_down_{section_title}", on_click=thumbs_down_callback):
+            if st.button("👎", key=f"thumbs_down_{section_key}", on_click=thumbs_down_callback):
                 pass
 
         col5, col6 = st.columns(2)
@@ -64,18 +66,18 @@ def create_section_dropdown(act, section, section_title):
             # The "Legislation" text area is now populated with the selected act and section
             legislation = df[(df["act"] == act) & (df["section"] == section)]["text"].iloc[0]
             st.text_area("Legislation", value=legislation, height=200)
-            if st.button("Generate Explanatory Notes", key=f"generate_notes_{section_title}", on_click=generate_notes_callback):
+            if st.button(label = "Generate ", key = f"Generate Explanatory Notes_{section_key}", on_click=generate_notes_callback):
                 pass
 
         with col6:
-            st.text_area("Explanatory Notes", value=explanatory_notes, height=200)
+            st.text_area(label = "Explanatory Notes", key = f"Explanatory Notes_{section_key}", value=explanatory_notes, height=200)
             if explanatory_notes_approved is True:
                 st.success("Explanatory notes approved!", icon="✅")
             elif explanatory_notes_approved is False:
-                redraft_prompt = st.text_input("Redraft Prompt", value=redraft_prompt, key=f"redraft_prompt_{section_title}", placeholder="Enter redraft prompt here")
-                st.session_state.section_dropdowns[section_title]["redraft_prompt"] = redraft_prompt
+                redraft_prompt = st.text_input(label = "Redraft Prompt", key = f"Redraft Prompt_{section_key}", value=redraft_prompt, placeholder="Enter redraft prompt here")
+                st.session_state.section_dropdowns[section_key]["redraft_prompt"] = redraft_prompt
                 if redraft_prompt:
-                    st.session_state.section_dropdowns[section_title]["explanatory_notes"] = generate_explanatory_notes_with_redraft(
+                    st.session_state.section_dropdowns[section_key]["explanatory_notes"] = generate_explanatory_notes_with_redraft(
                         legislation, explanatory_notes, redraft_prompt
                     )
 
@@ -88,11 +90,17 @@ with st.sidebar:
     selected_act = st.selectbox("Select Act", act_options)
 
     if selected_act == "Please select ACT":
-        section_options = [""]
+        section_options = ["Please select SECTION"]
     else:
-        section_options = ["Please select SECTION"] + list(df[df["act"] == selected_act]["section"].unique())
+        section_options = ["All"] + list(df[df["act"] == selected_act]["section"].unique())
     selected_section = st.selectbox("Select Section", section_options)
 
 if selected_act != "Please select ACT" and selected_section != "Please select SECTION":
-    section_title = df[(df["act"] == selected_act) & (df["section"] == selected_section)]["section_title"].iloc[0]
-    create_section_dropdown(selected_act, selected_section, section_title)
+    if selected_section == "All":
+        sections_in_act = df[df["act"] == selected_act]["section"].unique()
+        for section in sections_in_act:
+            section_title = df[(df["act"] == selected_act) & (df["section"] == section)]["section_title"].iloc[0]
+            create_section_dropdown(selected_act, section, section_title)
+    else:
+        section_title = df[(df["act"] == selected_act) & (df["section"] == selected_section)]["section_title"].iloc[0]
+        create_section_dropdown(selected_act, selected_section, section_title)
