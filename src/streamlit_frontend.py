@@ -11,6 +11,9 @@ df = pd.read_csv("data/test_data.csv")
 if "section_dropdowns" not in st.session_state:
     st.session_state.section_dropdowns = {}
 
+if "selected_language" not in st.session_state:
+    st.session_state.selected_language = "English"
+
 def create_section_dropdown(act, section, section_title):
     section_key = f"{act}_{section}_{section_title.replace(' ', '_')}"  # Generate a unique key
     
@@ -94,6 +97,11 @@ with st.sidebar:
     else:
         section_options = ["All"] + list(df[df["act"] == selected_act]["section"].unique())
     selected_section = st.selectbox("Select Section", section_options)
+
+    # Add language selection dropdown
+    language_options = ["English", "Welsh"]
+    selected_language = st.selectbox("Select Language", language_options, index=0)
+    st.session_state.selected_language = selected_language
 
 if selected_act != "Please select ACT" and selected_section != "Please select SECTION":
     if selected_section == "All":
