@@ -6,15 +6,17 @@ import streamlit as st
 import markdown
 from bs4 import BeautifulSoup
 import pandas as pd
-
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 client = anthropic.Anthropic(
     # defaults to os.environ.get("ANTHROPIC_API_KEY")
-    api_key="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",
+    api_key="",
 )
 
 api_url = "https://api.anthropic.com/v1/messages"
-api_key = "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"
+api_key = ""
 
 model_name = "Helsinki-NLP/opus-mt-en-cy"
 tokenizer = MarianTokenizer.from_pretrained(model_name)
@@ -173,6 +175,10 @@ def english_to_welsh(prompt):
     welsh_prompt = model.generate(**tokenizer(prompt, return_tensors="pt", padding=True))
     return tokenizer.decode(welsh_prompt[0], skip_special_tokens=True)
 
+def send_email(explanatory_notes):
+    # Email configuration
+    print("Email sent!")
+
 
 # Set page config
 st.set_page_config(page_title="Legislation Explainer", layout="wide")
@@ -225,7 +231,7 @@ def create_section_dropdown(act, section, section_title):
         def generate_notes_callback():
             # Reset the thumbs up/down buttons
             st.session_state.section_dropdowns[section_key]["explanatory_notes_approved"] = None
-            if selected_language == "Welsh":
+            if selected_language == "Cymraeg":
                 st.session_state.section_dropdowns[section_key]["explanatory_notes"] = claude_response(legislation, welsh=True)
             else:
                 st.session_state.section_dropdowns[section_key]["explanatory_notes"] = generate_explanatory_notes(legislation)
@@ -253,6 +259,12 @@ def create_section_dropdown(act, section, section_title):
             st.text_area("Explanatory Notes", key = f"Explanatory Notes{section_key}", value=explanatory_notes, height=200)
             if explanatory_notes_approved is True:
                 st.success("Explanatory notes approved!", icon="✅")
+                
+                # Add button to send email
+                if st.button("Send Email", key=f"send_email_{section_key}"):
+                    send_email(explanatory_notes)
+                    
+                    
             elif explanatory_notes_approved is False:
                 redraft_prompt = st.text_input("Redraft Prompt", value=redraft_prompt, key=f"redraft_prompt_{section_key}", placeholder="Enter redraft prompt here")
                 st.session_state.section_dropdowns[section_key]["redraft_prompt"] = redraft_prompt
@@ -263,6 +275,10 @@ def create_section_dropdown(act, section, section_title):
 
 # Streamlit UI
 st.title("Legislation Explainer")
+
+image = "gov.png"
+
+st.sidebar.image(image, use_column_width=False)
 
 with st.sidebar:
     st.title("Select Act and Section")
@@ -275,8 +291,10 @@ with st.sidebar:
         section_options = ["All"] + list(df[df["act"] == selected_act]["section"].unique())
     selected_section = st.selectbox("Select Section", section_options)
 
+    st.title("Select Audience")
+    
     # Add language selection dropdown
-    language_options = ["English", "Welsh"]
+    language_options = ["English", "Cymraeg"]
     selected_language = st.selectbox("Select Language", language_options, index=0)
     st.session_state.selected_language = selected_language
     
@@ -285,10 +303,15 @@ with st.sidebar:
     selected_audience_level = st.selectbox("Audience", audience_level_options, index=0)
     st.session_state.selected_audience_level = "1" if selected_audience_level == "No legal background" else "2"
     
+    st.title("Version Control")
+    
     # Add audience level selection dropdown
     version = ["15/04/24", "16/04/24", "17/04/24"]
     selected_version = st.selectbox("Document Version", version, index=0)
-
+    
+    branches = ["Aidan's Branch", "Meline's Branch", "Omar's Branch", "Alex's Branch"]
+    selected_branch = st.selectbox("Version Branch", branches, index=0)
+                
 if selected_act != "Please select ACT" and selected_section != "Please select SECTION":
     if selected_section == "All":
         sections_in_act = df[df["act"] == selected_act]["section"].unique()
@@ -298,3 +321,6 @@ if selected_act != "Please select ACT" and selected_section != "Please select SE
     else:
         section_title = df[(df["act"] == selected_act) & (df["section"] == selected_section)]["section_title"].iloc[0]
         create_section_dropdown(selected_act, selected_section, section_title)
+
+
+
